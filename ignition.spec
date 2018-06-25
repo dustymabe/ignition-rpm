@@ -71,8 +71,8 @@
 %global dracutproject         dustymabe
 %global dracutrepo            bootengine
 # https://github.com/dustymabe/bootengine
-%global dracutprovider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
-%global dracutimport_path     %{provider_prefix}
+%global dracutprovider_prefix %{dracutprovider}.%{dracutprovider_tld}/%{dracutproject}/%{dracutrepo}
+%global dracutimport_path     %{dracutprovider_prefix}
 %global dracutcommit          bf3b454db89bcff82d01b472786821bd458d3593
 %global dracutshortcommit     %(c=%{dracutcommit}; echo ${c:0:7})
 
