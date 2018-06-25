@@ -302,7 +302,7 @@ providing packages with %{import_path} prefix.
 Summary:  Dracut modules for ignition
 License:  BSD
 URL:      https://%{dracutprovider_prefix}
-Requires: ignition
+Requires: %{name} = %{version}-%{release}
 Requires: dracut
 Requires: dracut-network
 BuildArchitectures: noarch
@@ -314,7 +314,6 @@ initramfs on boot.
 %files dracut
 %doc README.md
 %license LICENSE
-%defattr(-,root,root,0755)
 %{dracutlibdir}/modules.d/30ignition
 %{dracutlibdir}/modules.d/99journald-conf
 ############## end dracut subpackage ##############
