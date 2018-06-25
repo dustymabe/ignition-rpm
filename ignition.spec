@@ -47,6 +47,7 @@
 %define gobuild(o:) go build -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n')" -a -v -x %{?**};
 %endif
 
+# macros for ignition
 %global provider        github
 %global provider_tld    com
 %global project         coreos
@@ -56,13 +57,25 @@
 %global import_path     %{provider_prefix}
 %global commit          76107251acd117c6d3e5b4dae2b47f82f944984b
 %global shortcommit     %(c=%{commit}; echo ${c:0:7})
-
 # define ldflags, buildflags, testflags here. The ldflags were
 # taken from ./build. We will need to periodically check these
 # for consistency
 %global ldflags ' -X github.com/coreos/ignition/internal/version.Raw=%{version} '
 %global buildflags %nil
 %global testflags %nil
+
+# macros for ignition-dracut
+%global dracutlibdir          %{_prefix}/lib/dracut
+%global dracutprovider        github
+%global dracutprovider_tld    com
+%global dracutproject         dustymabe
+%global dracutrepo            bootengine
+# https://github.com/dustymabe/bootengine
+%global dracutprovider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
+%global dracutimport_path     %{provider_prefix}
+%global dracutcommit          bf3b454db89bcff82d01b472786821bd458d3593
+%global dracutshortcommit     %(c=%{dracutcommit}; echo ${c:0:7})
+
 
 Name:           ignition
 Version:        0.26.0
@@ -71,6 +84,7 @@ Summary:        First boot installer and configuration tool
 License:        ASL 2.0
 URL:            https://%{provider_prefix}
 Source0:        https://%{provider_prefix}/archive/%{commit}/%{repo}-%{shortcommit}.tar.gz
+Source1:        https://%{dracutprovider_prefix}/archive/%{dracutcommit}/%{dracutrepo}-%{dracutshortcommit}.tar.gz
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 aarch64 %{arm}}
@@ -155,6 +169,8 @@ of truth (remote URL, network metadata service, hypervisor bridge, etc.)
 and applies the configuration.
 
 %{summary}
+
+############## devel subpackage ##############
 
 %if 0%{?with_devel}
 %package devel
@@ -254,6 +270,7 @@ building other packages which use import path with
 %{import_path} prefix.
 %endif
 
+############## unit-test-devel subpackage ##############
 %if 0%{?with_unit_test} && 0%{?with_devel}
 %package unit-test-devel
 Summary:         Unit tests for %{name} package
@@ -278,11 +295,37 @@ This package contains unit tests for project
 providing packages with %{import_path} prefix.
 %endif
 
+
+############## dracut subpackage ##############
+%package dracut
+
+Summary:  Dracut modules for ignition
+License:  BSD
+URL:      https://%{dracutprovider_prefix}
+Requires: ignition
+Requires: dracut
+Requires: dracut-network
+BuildArchitectures: noarch
+
+%description dracut
+Dracut modules for ignition to enable ignition services to run in the
+initramfs on boot.
+
+%files dracut
+%doc README.md
+%license LICENSE
+%defattr(-,root,root,0755)
+%{dracutlibdir}/modules.d/30ignition
+%{dracutlibdir}/modules.d/99journald-conf
+############## end dracut subpackage ##############
+
 %prep
+# unpack source0 and apply patches
 %setup -q -n %{repo}-%{commit}
+# unpack source1 (dracut modules)
+%setup -T -D -a 1 -q -n %{repo}-%{commit}
 
 %build
-
 # Set up PWD as a proper import path for go
 mkdir -p src/%{provider}.%{provider_tld}/%{project}
 ln -s ../../../ src/%{import_path}
@@ -306,9 +349,14 @@ echo "Building ignition-validate..."
 
 
 %install
+# main package
 install -d -p %{buildroot}%{_bindir}
 install -p -m 0755 ./ignition %{buildroot}%{_bindir}
 install -p -m 0755 ./ignition-validate %{buildroot}%{_bindir}
+# dracut subpackage
+install -d -p %{buildroot}/%{dracutlibdir}/modules.d
+rm %{dracutrepo}-%{dracutcommit}/dracut/README.txt
+cp -r %{dracutrepo}-%{dracutcommit}/dracut/* %{buildroot}/%{dracutlibdir}/modules.d/
 
 # source codes for building projects
 %if 0%{?with_devel}
