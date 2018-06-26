@@ -319,8 +319,9 @@ initramfs on boot.
 ############## end dracut subpackage ##############
 
 %prep
+# setup command reference: http://ftp.rpm.org/max-rpm/s1-rpm-inside-macros.html
 # unpack source0 and apply patches
-%setup -q -n %{repo}-%{commit}
+%setup -T -b 0 -q -n %{repo}-%{commit}
 # unpack source1 (dracut modules)
 %setup -T -D -a 1 -q -n %{repo}-%{commit}
 
