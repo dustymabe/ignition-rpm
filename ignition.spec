@@ -94,6 +94,11 @@ BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 # add non golang BuildRequires that weren't detected
 BuildRequires: libblkid-devel
 
+# Requires for 'disks' stage
+Requires: btrfs-progs
+Requires: dosfstools
+Requires: gdisk
+
 # Main rpm package BuildRequires
 %if ! 0%{?with_bundled}
 # validate/main.go
